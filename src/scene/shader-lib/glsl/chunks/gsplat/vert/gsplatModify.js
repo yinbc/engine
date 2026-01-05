@@ -1,7 +1,8 @@
 export default /* glsl */`
 // Modify splat center position
 void modifySplatCenter(inout vec3 center) {
-    // Example: center.y += 1.0; // offset all splats up by 1 unit
+    // Offset all splats up by 0.1 unit
+    center.y += 0.1;
 }
 
 // Modify splat rotation and scale (more efficient than modifyCovariance)
