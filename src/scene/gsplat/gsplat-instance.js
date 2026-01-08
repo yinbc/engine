@@ -53,6 +53,14 @@ class GSplatInstance {
     cameras = [];
 
     /**
+     * Y offset that increments every frame.
+     *
+     * @type {number}
+     * @private
+     */
+    yOffset = 0;
+
+    /**
      * @param {GSplatResourceBase} resource - The splat instance.
      * @param {object} [options] - Options for the instance.
      * @param {ShaderMaterial|null} [options.material] - The material instance.
@@ -176,6 +184,7 @@ class GSplatInstance {
         material.setParameter('numSplats', 0);
         this.setMaterialOrderTexture(material);
         material.setParameter('alphaClip', 0.3);
+        material.setParameter('yOffset', this.yOffset);
         material.setDefine(`DITHER_${options.dither ? 'BLUENOISE' : 'NONE'}`, '');
         material.cull = CULLFACE_NONE;
         material.blendType = options.dither ? BLEND_NONE : BLEND_PREMULTIPLIED;
@@ -220,6 +229,10 @@ class GSplatInstance {
             // we get new list of cameras each frame
             this.cameras.length = 0;
         }
+
+        // increment Y offset each frame
+        this.yOffset += 1.0;
+        this.material.setParameter('yOffset', this.yOffset);
     }
 
     setHighQualitySH(value) {

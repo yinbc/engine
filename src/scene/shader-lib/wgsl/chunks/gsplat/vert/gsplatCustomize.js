@@ -1,7 +1,10 @@
 export default /* wgsl */`
+uniform yOffset: f32;
+
 fn modifyCenter(center: ptr<function, vec3f>) {
     // Modify the splat center position
-    // Example: (*center).y += 1.0; // offset all splats up by 1 unit
+    // Increment Y position by yOffset (updated each frame)
+    (*center).y += uniform.yOffset;
 }
 
 fn modifyCovariance(originalCenter: vec3f, modifiedCenter: vec3f, covA: ptr<function, vec3f>, covB: ptr<function, vec3f>) {

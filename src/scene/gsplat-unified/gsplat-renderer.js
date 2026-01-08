@@ -54,6 +54,14 @@ class GSplatRenderer {
     forceCopyMaterial = true;
 
     /**
+     * Y offset that increments every frame.
+     *
+     * @type {number}
+     * @private
+     */
+    yOffset = 0;
+
+    /**
      * @param {GraphicsDevice} device - The graphics device.
      * @param {GraphNode} node - The graph node.
      * @param {GraphNode} cameraNode - The camera node.
@@ -173,6 +181,7 @@ class GSplatRenderer {
         }
 
         this._material.setParameter('alphaClip', 0.3);
+        this._material.setParameter('yOffset', this.yOffset);
         this._material.setDefine(`DITHER_${dither ? 'BLUENOISE' : 'NONE'}`, '');
         this._material.cull = CULLFACE_NONE;
         this._material.blendType = dither ? BLEND_NONE : BLEND_PREMULTIPLIED;
@@ -224,6 +233,10 @@ class GSplatRenderer {
             this.copyMaterialSettings(params.material);
             this.forceCopyMaterial = false;
         }
+
+        // Increment Y offset each frame
+        this.yOffset += 1.0;
+        this._material.setParameter('yOffset', this.yOffset);
     }
 
     /**

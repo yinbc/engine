@@ -1,7 +1,10 @@
 export default /* glsl */`
+uniform float yOffset;
+
 void modifyCenter(inout vec3 center) {
     // Modify the splat center position
-    // Example: center.y += 1.0; // offset all splats up by 1 unit
+    // Increment Y position by yOffset (updated each frame)
+    center.y += yOffset;
 }
 
 void modifyCovariance(vec3 originalCenter, vec3 modifiedCenter, inout vec3 covA, inout vec3 covB) {
