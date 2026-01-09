@@ -8,6 +8,7 @@ export default /* glsl */`
 #include "gsplatQuatToMat3VS"
 #include "gsplatSourceFormatVS"
 #include "gsplatSourceVS"
+#include "gsplatTemporalDataVS"
 #include "gsplatCenterVS"
 #include "gsplatCornerVS"
 #include "gsplatOutputVS"

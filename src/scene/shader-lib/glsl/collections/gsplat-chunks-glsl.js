@@ -16,6 +16,7 @@ import gsplatStructsVS from '../chunks/gsplat/vert/gsplatStructs.js';
 import gsplatCornerVS from '../chunks/gsplat/vert/gsplatCorner.js';
 import gsplatDataVS from '../chunks/gsplat/vert/gsplatData.js';
 import gsplatOutputVS from '../chunks/gsplat/vert/gsplatOutput.js';
+import gsplatTemporalDataVS from '../chunks/gsplat/vert/gsplatTemporalData.js';
 import gsplatPS from '../chunks/gsplat/frag/gsplat.js';
 import gsplatSHVS from '../chunks/gsplat/vert/gsplatSH.js';
 import gsplatSourceVS from '../chunks/gsplat/vert/gsplatSource.js';
@@ -42,6 +43,7 @@ export const gsplatChunksGLSL = {
     gsplatStructsVS,
     gsplatDataVS,
     gsplatOutputVS,
+    gsplatTemporalDataVS,
     gsplatPS,
     gsplatSHVS,
     gsplatSourceVS,

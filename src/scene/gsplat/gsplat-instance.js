@@ -217,6 +217,12 @@ class GSplatInstance {
             // resolve spherical harmonics
             this.resolveSH?.render(camera._node, this.meshInstance.node.getWorldTransform());
 
+            // update temporal time parameter (cycles from 0 to 5 seconds)
+            if (this.resource.temporalTexture) {
+                const time = (Date.now() * 0.001) % 5.0;
+                this.material.setParameter('gsplatTime', time);
+            }
+
             // we get new list of cameras each frame
             this.cameras.length = 0;
         }

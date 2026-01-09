@@ -33,9 +33,21 @@ fn vertexMain(input: VertexInput) -> VertexOutput {
 
     var modelCenter: vec3f = readCenter(&source);
 
+    #ifdef USE_TEMPORAL_GSPLAT
+        // Read temporal data and check if we should render this splat
+        let temporal: TemporalData = readTemporalData(source);
+        if (shouldCullTemporal(temporal)) {
+            output.position = discardVec;
+            return output;
+        }
+
+        // Apply temporal motion to center position
+        modelCenter = applyTemporalMotion(modelCenter, temporal);
+    #endif
+
     var center: SplatCenter;
     center.modelCenterOriginal = modelCenter;
-    
+
     modifyCenter(&modelCenter);
     modifySplatCenter(&modelCenter);
     center.modelCenterModified = modelCenter;
@@ -77,6 +89,11 @@ fn vertexMain(input: VertexInput) -> VertexOutput {
 
     modifyColor(modelCenter, &clr);
     modifySplatColor(modelCenter, &clr);
+
+    #ifdef USE_TEMPORAL_GSPLAT
+        // Apply temporal opacity modification
+        clr.a = applyTemporalOpacity(clr.a, temporal);
+    #endif
 
     clipCorner(&corner, clr.w);
 

@@ -29,9 +29,21 @@ void main(void) {
 
     vec3 modelCenter = readCenter(source);
 
+    #ifdef USE_TEMPORAL_GSPLAT
+        // Read temporal data and check if we should render this splat
+        TemporalData temporal;
+        if (!readTemporalData(source, temporal)) {
+            gl_Position = discardVec;
+            return;
+        }
+
+        // Apply temporal motion to center position
+        modelCenter = applyTemporalMotion(modelCenter, temporal);
+    #endif
+
     SplatCenter center;
     center.modelCenterOriginal = modelCenter;
-    
+
     modifyCenter(modelCenter);
     modifySplatCenter(modelCenter);
     center.modelCenterModified = modelCenter;
@@ -72,6 +84,11 @@ void main(void) {
 
     modifyColor(modelCenter, clr);
     modifySplatColor(modelCenter, clr);
+
+    #ifdef USE_TEMPORAL_GSPLAT
+        // Apply temporal opacity modification
+        clr.a = applyTemporalOpacity(clr.a, temporal);
+    #endif
 
     clipCorner(corner, clr.w);
 

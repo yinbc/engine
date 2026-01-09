@@ -47,6 +47,12 @@ class GSplatResource extends GSplatResourceBase {
     /** @type {Texture | undefined} */
     sh12to15Texture;
 
+    /** @type {Texture | undefined} */
+    temporalTexture;
+
+    /** @type {Texture | undefined} */
+    temporalMotionTexture;
+
     /**
      * @param {GraphicsDevice} device - The graphics device.
      * @param {GSplatData} gsplatData - The splat data.
@@ -64,6 +70,21 @@ class GSplatResource extends GSplatResourceBase {
         // write texture data
         this.updateColorData(gsplatData);
         this.updateTransformData(gsplatData);
+
+        // check if temporal parameters exist
+        const hasTemporalParams = gsplatData.getProp('ts') &&
+                                  gsplatData.getProp('t_scale') &&
+                                  gsplatData.getProp('motion_0') &&
+                                  gsplatData.getProp('motion_1') &&
+                                  gsplatData.getProp('motion_2');
+
+        if (hasTemporalParams) {
+            // RGBA16F: ts, t_scale, motion_0, motion_1
+            // Additional texture needed for motion_2
+            this.temporalTexture = this.createTexture('splatTemporal', PIXELFORMAT_RGBA16F, size);
+            this.temporalMotionTexture = this.createTexture('splatTemporalMotion', PIXELFORMAT_RGBA16F, size);
+            this.updateTemporalData(gsplatData);
+        }
 
         // initialize SH data
         this.shBands = gsplatData.shBands;
@@ -87,6 +108,8 @@ class GSplatResource extends GSplatResourceBase {
         this.colorTexture?.destroy();
         this.transformATexture?.destroy();
         this.transformBTexture?.destroy();
+        this.temporalTexture?.destroy();
+        this.temporalMotionTexture?.destroy();
         this.sh1to3Texture?.destroy();
         this.sh4to7Texture?.destroy();
         this.sh8to11Texture?.destroy();
@@ -96,6 +119,9 @@ class GSplatResource extends GSplatResourceBase {
 
     configureMaterialDefines(defines) {
         defines.set('SH_BANDS', this.shBands);
+        if (this.temporalTexture) {
+            defines.set('USE_TEMPORAL_GSPLAT', 1);
+        }
     }
 
     configureMaterial(material) {
@@ -103,6 +129,10 @@ class GSplatResource extends GSplatResourceBase {
         material.setParameter('splatColor', this.colorTexture);
         material.setParameter('transformA', this.transformATexture);
         material.setParameter('transformB', this.transformBTexture);
+        if (this.temporalTexture) {
+            material.setParameter('splatTemporal', this.temporalTexture);
+            material.setParameter('splatTemporalMotion', this.temporalMotionTexture);
+        }
         if (this.sh1to3Texture) material.setParameter('splatSH_1to3', this.sh1to3Texture);
         if (this.sh4to7Texture) material.setParameter('splatSH_4to7', this.sh4to7Texture);
         if (this.sh8to11Texture) material.setParameter('splatSH_8to11', this.sh8to11Texture);
@@ -288,6 +318,44 @@ class GSplatResource extends GSplatResourceBase {
         this.sh4to7Texture?.unlock();
         this.sh8to11Texture?.unlock();
         this.sh12to15Texture?.unlock();
+    }
+
+    /**
+     * Updates temporal parameter data to GPU textures
+     *
+     * @param {GSplatData} gsplatData - The source data
+     */
+    updateTemporalData(gsplatData) {
+        if (!this.temporalTexture || !this.temporalMotionTexture) {
+            return;
+        }
+
+        const float2Half = FloatPacking.float2Half;
+        const temporalData = this.temporalTexture.lock();
+        const motionData = this.temporalMotionTexture.lock();
+
+        const ts = gsplatData.getProp('ts');
+        const t_scale = gsplatData.getProp('t_scale');
+        const motion_0 = gsplatData.getProp('motion_0');
+        const motion_1 = gsplatData.getProp('motion_1');
+        const motion_2 = gsplatData.getProp('motion_2');
+
+        for (let i = 0; i < this.numSplats; ++i) {
+            // splatTemporal: RGBA = (ts, t_scale, unused, unused)
+            temporalData[i * 4 + 0] = float2Half(ts[i]);
+            temporalData[i * 4 + 1] = float2Half(t_scale[i]);
+            temporalData[i * 4 + 2] = float2Half(0.0);
+            temporalData[i * 4 + 3] = float2Half(0.0);
+
+            // splatTemporalMotion: RGBA = (motion_0, motion_1, motion_2, unused)
+            motionData[i * 4 + 0] = float2Half(motion_0[i]);
+            motionData[i * 4 + 1] = float2Half(motion_1[i]);
+            motionData[i * 4 + 2] = float2Half(motion_2[i]);
+            motionData[i * 4 + 3] = float2Half(0.0);
+        }
+
+        this.temporalTexture.unlock();
+        this.temporalMotionTexture.unlock();
     }
 }
 
