@@ -59,7 +59,7 @@ class WorkBufferRenderInfo {
             fragmentWGSL: wgslGsplatCopyToWorkBufferPS,
             fragmentOutputTypes: colorOnly ?
                 [colorOutputType] :
-                [colorOutputType, 'uvec4', 'uvec2']
+                [colorOutputType, 'uvec4', 'uvec2', 'vec4', 'vec4']
         });
 
         this.quadRender = new QuadRender(shader);
@@ -93,11 +93,20 @@ class GSplatWorkBuffer {
     /** @type {Texture} */
     splatTexture1;
 
+    /** @type {Texture} */
+    temporalTexture;
+
+    /** @type {Texture} */
+    temporalMotionTexture;
+
     /** @type {RenderTarget} */
     renderTarget;
 
     /** @type {RenderTarget} */
     colorRenderTarget;
+
+    /** @type {RenderTarget} */
+    temporalRenderTarget;
 
     /** @type {Texture} */
     orderTexture;
@@ -127,13 +136,17 @@ class GSplatWorkBuffer {
         // - colorTexture (RGBA16F/RGBA16U): RGBA color with alpha
         // - splatTexture0 (RGBA32U): modelCenter.xyz (3×32-bit floats as uint) + 2×16-bit covariance halfs (covA.z, covB.z)
         // - splatTexture1 (RG32U): 4×16-bit covariance halfs packed as (covA.xy, covB.xy)
+        // - temporalTexture (RGBA16F): ts, t_scale, motion_0, motion_1
+        // - temporalMotionTexture (RGBA16F): motion_2, unused, unused, unused
         this.colorTexture = this.createTexture('splatColor', this.colorTextureFormat, 1, 1);
         this.splatTexture0 = this.createTexture('splatTexture0', PIXELFORMAT_RGBA32U, 1, 1);
         this.splatTexture1 = this.createTexture('splatTexture1', PIXELFORMAT_RG32U, 1, 1);
+        this.temporalTexture = this.createTexture('splatTemporal', PIXELFORMAT_RGBA16F, 1, 1);
+        this.temporalMotionTexture = this.createTexture('splatTemporalMotion', PIXELFORMAT_RGBA16F, 1, 1);
 
         this.renderTarget = new RenderTarget({
             name: `GsplatWorkBuffer-MRT-${this.id}`,
-            colorBuffers: [this.colorTexture, this.splatTexture0, this.splatTexture1],
+            colorBuffers: [this.colorTexture, this.splatTexture0, this.splatTexture1, this.temporalTexture, this.temporalMotionTexture],
             depth: false,
             flipY: true
         });
@@ -141,6 +154,13 @@ class GSplatWorkBuffer {
         this.colorRenderTarget = new RenderTarget({
             name: `GsplatWorkBuffer-Color-${this.id}`,
             colorBuffer: this.colorTexture,
+            depth: false,
+            flipY: true
+        });
+
+        this.temporalRenderTarget = new RenderTarget({
+            name: `GsplatWorkBuffer-Temporal-${this.id}`,
+            colorBuffers: [this.temporalTexture, this.temporalMotionTexture],
             depth: false,
             flipY: true
         });
@@ -170,10 +190,13 @@ class GSplatWorkBuffer {
         this.colorTexture?.destroy();
         this.splatTexture0?.destroy();
         this.splatTexture1?.destroy();
+        this.temporalTexture?.destroy();
+        this.temporalMotionTexture?.destroy();
         this.orderTexture?.destroy();
         this.orderBuffer?.destroy();
         this.renderTarget?.destroy();
         this.colorRenderTarget?.destroy();
+        this.temporalRenderTarget?.destroy();
         this.uploadStream.destroy();
     }
 

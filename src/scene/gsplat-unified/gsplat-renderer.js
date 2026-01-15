@@ -161,6 +161,14 @@ class GSplatRenderer {
         this._material.setParameter('splatColor', workBuffer.colorTexture);
         this._material.setParameter('splatTexture0', workBuffer.splatTexture0);
         this._material.setParameter('splatTexture1', workBuffer.splatTexture1);
+
+        // temporal textures (always present in work buffer)
+        if (workBuffer.temporalTexture && workBuffer.temporalMotionTexture) {
+            this._material.setParameter('splatTemporal', workBuffer.temporalTexture);
+            this._material.setParameter('splatTemporalMotion', workBuffer.temporalMotionTexture);
+            this._material.setDefine('USE_TEMPORAL_GSPLAT', 1);
+        }
+
         this._material.setDefine('SH_BANDS', '0');
 
         // set instance properties
@@ -217,6 +225,12 @@ class GSplatRenderer {
         // Update colorRampIntensity parameter every frame when overdraw is enabled
         if (params.colorRamp) {
             this._material.setParameter('colorRampIntensity', params.colorRampIntensity);
+        }
+
+        // Update temporal time parameter (cycles from 0 to 5 seconds)
+        if (this.workBuffer.temporalTexture) {
+            const time = (Date.now() * 0.001) % 5.0;
+            this._material.setParameter('gsplatTime', time);
         }
 
         // Copy material settings from params.material if dirty or on first update

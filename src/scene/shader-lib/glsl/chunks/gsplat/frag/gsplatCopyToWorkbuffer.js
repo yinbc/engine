@@ -8,6 +8,7 @@ export default /* glsl */`
 #include "gsplatEvalSHVS"
 #include "gsplatQuatToMat3VS"
 #include "gsplatSourceFormatVS"
+#include "gsplatTemporalDataVS"
 
 uniform int uStartLine;      // Start row in destination texture
 uniform int uViewportWidth;  // Width of the destination viewport in pixels
@@ -43,6 +44,8 @@ void main(void) {
         #ifndef GSPLAT_COLOR_ONLY
             pcFragColor1 = uvec4(0u);
             pcFragColor2 = uvec2(0u);
+            pcFragColor3 = vec4(0.0);
+            pcFragColor4 = vec4(0.0);
         #endif
 
     } else {
@@ -127,6 +130,17 @@ void main(void) {
             // Store rotation (xyz, w derived) and scale as 6 half-floats
             pcFragColor1 = uvec4(floatBitsToUint(worldCenter.x), floatBitsToUint(worldCenter.y), floatBitsToUint(worldCenter.z), packHalf2x16(worldRotation.xy));
             pcFragColor2 = uvec2(packHalf2x16(vec2(worldRotation.z, worldScale.x)), packHalf2x16(worldScale.yz));
+
+            // Read and store temporal data if available
+            #ifdef USE_TEMPORAL_GSPLAT
+                vec4 temporalParams = texelFetch(splatTemporal, source.uv, 0);
+                vec4 motionParams = texelFetch(splatTemporalMotion, source.uv, 0);
+                pcFragColor3 = temporalParams;  // ts, t_scale, motion_0, motion_1
+                pcFragColor4 = motionParams;    // motion_2, unused, unused, unused
+            #else
+                pcFragColor3 = vec4(0.0);
+                pcFragColor4 = vec4(0.0);
+            #endif
         #endif
     }
 }

@@ -8,6 +8,7 @@ export default /* wgsl */`
 #include "gsplatEvalSHVS"
 #include "gsplatQuatToMat3VS"
 #include "gsplatSourceFormatVS"
+#include "gsplatTemporalDataVS"
 
 uniform uStartLine: i32;      // Start row in destination texture
 uniform uViewportWidth: i32;  // Width of the destination viewport in pixels
@@ -43,6 +44,8 @@ fn fragmentMain(input: FragmentInput) -> FragmentOutput {
         #ifndef GSPLAT_COLOR_ONLY
             output.color1 = vec4u(0u);
             output.color2 = vec2u(0u);
+            output.color3 = vec4f(0.0);
+            output.color4 = vec4f(0.0);
         #endif
 
     } else {
@@ -116,6 +119,17 @@ fn fragmentMain(input: FragmentInput) -> FragmentOutput {
             // Store rotation (xyz, w derived) and scale as 6 half-floats
             output.color1 = vec4u(bitcast<u32>(worldCenter.x), bitcast<u32>(worldCenter.y), bitcast<u32>(worldCenter.z), pack2x16float(worldRotation.xy));
             output.color2 = vec2u(pack2x16float(vec2f(worldRotation.z, worldScale.x)), pack2x16float(worldScale.yz));
+
+            // Read and store temporal data if available
+            #ifdef USE_TEMPORAL_GSPLAT
+                let temporalParams = textureLoad(splatTemporal, source.uv, 0);
+                let motionParams = textureLoad(splatTemporalMotion, source.uv, 0);
+                output.color3 = temporalParams;  // ts, t_scale, motion_0, motion_1
+                output.color4 = motionParams;    // motion_2, unused, unused, unused
+            #else
+                output.color3 = vec4f(0.0);
+                output.color4 = vec4f(0.0);
+            #endif
         #endif
     }
     
