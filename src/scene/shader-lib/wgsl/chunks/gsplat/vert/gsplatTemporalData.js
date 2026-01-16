@@ -21,6 +21,13 @@ export default /* wgsl */`
         temporal.t_scale = temporalParams.y;
         temporal.motion = motionParams.xyz;
 
+        // Check if temporal data is essentially zero (no temporal effect)
+        // This handles splats from PLY files without temporal parameters
+        if (abs(temporal.t_scale) < 0.001) {
+            temporal.marginal_t = 1.0;  // Full opacity, no culling
+            return temporal;  // Render normally without temporal effects
+        }
+
         // Calculate marginal_t
         // cov_t = (exp(t_scale)) ** 2
         let cov_t_sqrt = exp(temporal.t_scale);
@@ -35,11 +42,19 @@ export default /* wgsl */`
 
     // Check if splat should be culled based on marginal_t
     fn shouldCullTemporal(temporal: TemporalData) -> bool {
+        // Don't cull splats without temporal parameters
+        if (abs(temporal.t_scale) < 0.001) {
+            return false;
+        }
         return temporal.marginal_t < 0.05;
     }
 
     // Apply temporal transformations to center position
     fn applyTemporalMotion(center: vec3f, temporal: TemporalData) -> vec3f {
+        // Skip motion for splats without temporal parameters
+        if (abs(temporal.t_scale) < 0.001) {
+            return center;
+        }
         // positions = self.positions + self.motion * (t - self.ts)
         let t_diff = gsplatTime - temporal.ts;
         return center + temporal.motion * t_diff;

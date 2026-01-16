@@ -138,6 +138,11 @@ class GSplatWorkBuffer {
         // - splatTexture1 (RG32U): 4×16-bit covariance halfs packed as (covA.xy, covB.xy)
         // - temporalTexture (RGBA16F): ts, t_scale, motion_0, motion_1
         // - temporalMotionTexture (RGBA16F): motion_2, unused, unused, unused
+        //
+        // Note: Temporal textures are always allocated (even if no resources use them) because:
+        // 1. Unified mode may mix resources with and without temporal parameters
+        // 2. MRT format must be fixed at creation time (cannot dynamically add/remove buffers)
+        // 3. Shaders handle zero temporal values correctly (backward compatible with old PLY files)
         this.colorTexture = this.createTexture('splatColor', this.colorTextureFormat, 1, 1);
         this.splatTexture0 = this.createTexture('splatTexture0', PIXELFORMAT_RGBA32U, 1, 1);
         this.splatTexture1 = this.createTexture('splatTexture1', PIXELFORMAT_RG32U, 1, 1);

@@ -20,6 +20,13 @@ export default /* glsl */`
         temporal.t_scale = temporalParams.y;
         temporal.motion = motionParams.xyz;
 
+        // Check if temporal data is essentially zero (no temporal effect)
+        // This handles splats from PLY files without temporal parameters
+        if (abs(temporal.t_scale) < 0.001) {
+            temporal.marginal_t = 1.0;  // Full opacity, no culling
+            return true;  // Render normally without temporal effects
+        }
+
         // Calculate marginal_t
         // cov_t = (exp(t_scale)) ** 2
         float cov_t = exp(temporal.t_scale);
@@ -39,6 +46,10 @@ export default /* glsl */`
 
     // Apply temporal transformations to center position
     vec3 applyTemporalMotion(vec3 center, TemporalData temporal) {
+        // Skip motion for splats without temporal parameters
+        if (abs(temporal.t_scale) < 0.001) {
+            return center;
+        }
         // positions = self.positions + self.motion * (t - self.ts)
         float t_diff = gsplatTime - temporal.ts;
         return center + temporal.motion * t_diff;
